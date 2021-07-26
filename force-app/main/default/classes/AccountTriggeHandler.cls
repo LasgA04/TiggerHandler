@@ -30,10 +30,10 @@ public class AccountTriggeHandler extends TriggerHandler {
 
     public override void afterUpdate(){
 
-        List<Contact> contacts=[SELECT Id, OwnerId,AccountId,Account.OwnerId FROM Contact Where AccountId IN :Trigger.new];
+        List<Contact> contacts=[SELECT Id, OwnerId,AccountId,Account.OwnerId FROM Contact Where AccountId IN :Trigger.new]; // FIRST-CODE-REVIEW: Consider using Trigger.newMap.keySet()
         List<Contact> contWithOtherOwnerId=new List<Contact>();
 
-        for (Contact cont : contacts) {
+        for (Contact cont : contacts) { // FIRST-CODE-REVIEW: Consider using contact as the name of the variable, it has some implications that we can discuss later
             if(cont.OwnerId!=cont.Account.OwnerId){
                 cont.OwnerId=cont.Account.OwnerId;
                 contWithOtherOwnerId.add(cont);

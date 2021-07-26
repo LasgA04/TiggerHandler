@@ -20,25 +20,29 @@
  * See the Apex Language Reference for more information about Testing and Code Coverage.
  */
 @isTest
-private class TestAcountTrigger {
+private class TestAcountTrigger { // FIRST-CODE-REVIEW: Change the name to AccountTriggerHandlerTest
 
     @isTest
-    static void EditOwnerIdOfAccount() {
-       Account account=TestDataFactory.CreateAccountWithContacts('0050U0000068a7nQAA', 20);
-       account.OwnerId='0050U0000068a81QAA';
+    static void EditOwnerIdOfAccount() { // FIRST-CODE-REVIEW: As good practice for Test Driven Development test are called "shouldSyncContactsOwnerWithAccountOwner" for example
+       Account account=TestDataFactory.CreateAccountWithContacts('0050U0000068a7nQAA', 20); // FIRST-CODE-REVIEW: Do not hardcode IDs
+       account.OwnerId='0050U0000068a81QAA'; // FIRST-CODE-REVIEW: Do not hardcode IDs
         Test.startTest();
             update account;
         Test.stopTest();
 
         List<Contact> contacts=[SELECT Id,OwnerId,Account.OwnerId FROM Contact WHERE Account.Id = :account.Id];
+        // FIRST-CODE-REVIEW: You can do query for different things like: 
+        // Integer numOfContactWithCorrectOwner = [SELECT COUNT() FROM Contact WHERE Account.Id = :account.Id AND OwnerId = :account.OwnerId];
+        // THEN you can do something like:
+        // System.assertEquals(20, numOfContactWithCorrectOwner);
 
         for (Contact cont : contacts) {
-            System.assert(cont.Account.OwnerId==cont.OwnerId);  
+            System.assert(cont.Account.OwnerId==cont.OwnerId); // FIRST-CODE-REVIEW: Use System.assertEquals() or System.assertNotEquals()
         }
     }
     @isTest
-    static void EditAccount() {
-        Account account=TestDataFactory.CreateAccountWithContacts('0050U0000068a7nQAA', 20);
+    static void EditAccount() { // FIRST-CODE-REVIEW: Same as the other method, but I'm not sure what are you trying to test in this one
+        Account account=TestDataFactory.CreateAccountWithContacts('0050U0000068a7nQAA', 20); // FIRST-CODE-REVIEW: Do not hardcode IDs
         account.Phone='452 100 0000';
 
          Test.startTest();
@@ -48,7 +52,7 @@ private class TestAcountTrigger {
 
       	 List<Contact> contacts=[SELECT Id,OwnerId,Account.OwnerId FROM Contact WHERE Account.Id = :account.Id];
          for (Contact cont : contacts) {
-             System.assert(cont.Account.OwnerId==cont.OwnerId);  
+             System.assert(cont.Account.OwnerId==cont.OwnerId); // FIRST-CODE-REVIEW: Use System.assertEquals() or System.assertNotEquals()
          }
  
      }
