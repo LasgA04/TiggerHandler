@@ -20,23 +20,29 @@
  * See the Apex Language Reference for more information about Testing and Code Coverage.
  */
 @isTest
-private class TestAcountTrigger {
+private class AccountTriggerHandlerTest {
 
     @isTest
-    static void EditOwnerIdOfAccount() {
-       Account account=TestDataFactory.CreateAccountWithContacts('0050U0000068a7nQAA', 20);
-       account.OwnerId='0050U0000068a81QAA';
-        Test.startTest();
-            update account;
-        Test.stopTest();
-
-        List<Contact> contacts=[SELECT Id,OwnerId,Account.OwnerId FROM Contact WHERE Account.Id = :account.Id];
-
-        for (Contact cont : contacts) {
-            System.assert(cont.Account.OwnerId==cont.OwnerId);  
-        }
+    static void shouldSyncContactsOwnerWithAccountOwner() {
+       List<User> users=[SELECT Id FROM User LIMIT 2];
+       System.assertEquals(2,users.size());  
+       if(users.size()==2){
+        Account account=TestDataFactory.CreateAccountWithContacts(users[0].Id, 20);
+        account.OwnerId=users[1].Id;
+ 
+         Test.startTest();
+             update account;
+         Test.stopTest();
+ 
+         List<Contact> contacts=[SELECT Id,OwnerId,Account.OwnerId FROM Contact WHERE Account.Id = :account.Id];
+         System.assertEquals(20, contacts.size(),'Comentario ');
+         
+         for (Contact cont : contacts) {
+             System.assertEquals(users[1].Id,cont.OwnerId);  
+         }
+       }
     }
-    @isTest
+    /*@isTest
     static void EditAccount() {
         Account account=TestDataFactory.CreateAccountWithContacts('0050U0000068a7nQAA', 20);
         account.Phone='452 100 0000';
@@ -51,6 +57,6 @@ private class TestAcountTrigger {
              System.assert(cont.Account.OwnerId==cont.OwnerId);  
          }
  
-     }
+     }*/
 
 }

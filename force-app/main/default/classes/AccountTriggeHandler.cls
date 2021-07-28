@@ -33,10 +33,10 @@ public class AccountTriggeHandler extends TriggerHandler {
         List<Contact> contacts=[SELECT Id, OwnerId,AccountId,Account.OwnerId FROM Contact Where AccountId IN :Trigger.new];
         List<Contact> contWithOtherOwnerId=new List<Contact>();
 
-        for (Contact cont : contacts) {
-            if(cont.OwnerId!=cont.Account.OwnerId){
-                cont.OwnerId=cont.Account.OwnerId;
-                contWithOtherOwnerId.add(cont);
+        for (Contact contact : contacts) {
+            if(contact.OwnerId!=contact.Account.OwnerId){
+                contact.OwnerId=contact.Account.OwnerId;
+                contWithOtherOwnerId.add(contact);
             }
         }
 

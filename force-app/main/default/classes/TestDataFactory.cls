@@ -57,4 +57,16 @@ public class TestDataFactory {
 
        return account;
     }
+
+    public static List<Contact> GetContactsWithBirthDate(Id accountId, Integer numContacts,Integer numYearsOld){
+        List<Contact> Contacts=new List<Contact>();
+
+        Date birthdate=numYearsOld > 0 ? Date.newInstance(Date.today().year()-numYearsOld, 1, 1):null;
+
+        for(Integer i=0;i<numContacts;i++){
+            Contacts.add(new Contact(LastName='Test Contact'+i,Birthdate=birthdate, AccountId=accountId));
+        }
+ 
+        return Contacts;
+    }
 }
