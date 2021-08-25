@@ -4,6 +4,7 @@ public class ContactTriggerHandler extends TriggerHandler {
 
     public ContactTriggerHandler() {
         this.newContMap=(Map<Id,Contact>)Trigger.newMap;
+        
     }
 
     public override void beforeUpdate(){
@@ -11,10 +12,7 @@ public class ContactTriggerHandler extends TriggerHandler {
 
         for(Contact contact:contacts){
             if(newContMap.get(contact.Id).OwnerId!=contact.Account.OwnerId){
-                //cont.OwnerId=cont.Account.OwnerId;
-                // cont.addError('The owner Id it is different');
                 newContMap.get(contact.Id).addError('The owner Id it is different');
-                //System.debug('The owner Id it is different');
             }
         }
     }
@@ -22,6 +20,8 @@ public class ContactTriggerHandler extends TriggerHandler {
     public override void afterUpdate(){
 
         List<Id> AccountIds=new List<Id>();
+
+        System.debug(' Updated Records from contacts '+Trigger.oldMap.keySet());
 
         for(Contact contact:(List<Contact>) Trigger.New){
             if(((Map<Id,Contact>)Trigger.oldMap).get(contact.Id).Birthdate!=contact.Birthdate)
@@ -33,6 +33,8 @@ public class ContactTriggerHandler extends TriggerHandler {
 
     public override void afterInsert(){
         List<Id> AccountIds=new List<Id>();
+
+        System.debug(' Insert Records from contacts '+Trigger.oldMap.keySet());
 
         for(Contact contact:(List<Contact>) Trigger.New){
             if(Contact.Birthdate!=null)

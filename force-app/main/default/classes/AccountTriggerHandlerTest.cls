@@ -21,42 +21,37 @@
  */
 @isTest
 private class AccountTriggerHandlerTest {
-
+    
     @isTest
     static void shouldSyncContactsOwnerWithAccountOwner() {
-       List<User> users=[SELECT Id FROM User LIMIT 2];
-       System.assertEquals(2,users.size());  
-       if(users.size()==2){
-        Account account=TestDataFactory.CreateAccountWithContacts(users[0].Id, 20);
-        account.OwnerId=users[1].Id;
- 
-         Test.startTest();
-             update account;
-         Test.stopTest();
- 
-         List<Contact> contacts=[SELECT Id,OwnerId,Account.OwnerId FROM Contact WHERE Account.Id = :account.Id];
-         System.assertEquals(20, contacts.size(),'Comentario ');
-         
-         for (Contact cont : contacts) {
-             System.assertEquals(users[1].Id,cont.OwnerId);  
-         }
-       }
-    }
-    /*@isTest
-    static void EditAccount() {
-        Account account=TestDataFactory.CreateAccountWithContacts('0050U0000068a7nQAA', 20);
-        account.Phone='452 100 0000';
+       User user=[SELECT Id FROM User LIMIT 1];
+       //System.assertEquals(2,users.size());
 
-         Test.startTest();
+      // Id fakeUserId= ATK.fakeId(User.SObjectType, 1);
+       TriggerHandler.bypass('ContactTriggerHandler');
+
+       ATK.SaveResult result = ATK.prepare(Account.SObjectType, 1)
+       .field(Account.Name).index('Name-{0000}')
+       .withChildren(Contact.SObjectType, Contact.AccountId, 20)
+           .field(Contact.LastName).index('Name-{0000}')
+           .save();
+
+        Account account=[Select Id from Account Where Name Like '%Name-%' Limit 1];
+
+        account.OwnerId=user.Id;
+
+        TriggerHandler.clearBypass('ContactTriggerHandler');
+
+        Test.startTest();
             update account;
-        	
-         Test.stopTest();
+        Test.stopTest();
 
-      	 List<Contact> contacts=[SELECT Id,OwnerId,Account.OwnerId FROM Contact WHERE Account.Id = :account.Id];
-         for (Contact cont : contacts) {
-             System.assert(cont.Account.OwnerId==cont.OwnerId);  
-         }
- 
-     }*/
+        List<Contact> contacts=[SELECT Id,OwnerId,Account.OwnerId FROM Contact WHERE Account.Id = :account.Id];
+        System.assertEquals(20, contacts.size(),'Comentario ');
+        
+        for (Contact cont : contacts) {
+            System.assertEquals(user.Id,cont.OwnerId);  
+        }
+    }
 
 }

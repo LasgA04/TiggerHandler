@@ -22,131 +22,149 @@
 @isTest
 private class ContactTriggerHandlerTest {
 
+   /* static ATK.SaveResult result =  ATK.prepare(Account.SObjectType, 5)
+        .field(Account.Name).index('Test Account-{0000}')
+        .withChildren(Contact.SObjectType, Contact.AccountId, 250)
+            .field(Contact.LastName).index('Name-{0000}')
+            .field(Contact.BirthDate).repeat(c24years,c16years)
+            .save();
+    
+         //   Map<Id,Account> AccountsByIds.keySet() MapIdsToAccounts
+
+*/
+    @TestSetup
+    static void makeData(){
+        Date current=Date.today();
+        Date c24years=Date.newInstance(current.year()-24,1,1);
+        Date c16years=Date.newInstance(current.year()-16,1,1);
+
+        ATK.SaveResult result =  ATK.prepare(Account.SObjectType, 5)
+                .field(Account.Name).index('Test Account-{0000}')
+                .withChildren(Contact.SObjectType, Contact.AccountId, 250)
+                    .field(Contact.LastName).index('Name-{0000}')
+                    .field(Contact.BirthDate).repeat(c24years,c16years)
+                    .save();
+    }
+
     @isTest
     static void shouldSyncContactsOwnerWithAccountOwner() {
         //We use the default user user created by Salesforce
        List<User> users=[SELECT Id FROM User LIMIT 2];
-       System.assertEquals(2,users.size());  
-
        if(users.size()==2){
-            List<Contact> Contacts=TestDataFactory.GetContactsToChangeOwnerId(users[0].Id,20); 
+            Account account=[SELECT Id ,(SELECT Id FROM Contacts) FROM Account WHERE Name = 'Test Account-0001'];
+
+            List<Contact> Contacts=account.Contacts; 
 
             for(Integer i=0; i<Contacts.size();i++){
                 Contacts[i].OwnerId=users[1].Id;
-                
             }
     
             Test.startTest();
                 Database.SaveResult[] results=Database.update(Contacts,false);
             Test.stopTest();
 
-            System.assertEquals(20,results.size());
+            System.assertEquals(Contacts.size(),results.size());
             for(Database.SaveResult result:results){
                 System.assertEquals(false,result.isSuccess());
             }
         }
     }
     @isTest
-    static void shouldHave100PertengaeOfContactsOver18() {
-        Account  account=new account(Name='Test Account');
+    static void shouldHave50PercentageOfContactsOver18() {
 
-        insert account;
+        Account account=[SELECT Id,Number_Of_Contacts_Over_18__c, Percentage_Of_Contacts_Over_18__c, 
+        Oldest_Contact__c, Youngest_Contact__c,
+        (SELECT Id, Birthdate FROM Contacts ORDER By Birthdate)
+        FROM Account WHERE  Name = 'Test Account-0003'];
 
-        List<Contact> Contacts=TestDataFactory.GetContactsWithBirthDate(account.Id,19,24); 
-        Contacts.addAll(TestDataFactory.GetContactsWithBirthDate(account.Id,1,30));
+        //System.assertEquals(Contacts.size(), account.Contacts.size(),'it Should have 20 Contacts ');
+        System.assertEquals((account.Contacts.size()/2), account.Number_Of_Contacts_Over_18__c,'it Should have '+(account.Contacts.size()/2)+' Contacts over 18 ');
+        System.assertEquals(50, account.Percentage_Of_Contacts_Over_18__c,'it Should have 50% of percentage of contacts over 18 ');
+        
+        System.assertEquals(16, account.Youngest_Contact__c,'the youngest contact Should have 16');
+        System.assertEquals(24, account.Oldest_Contact__c,'the oldest contact Should have 24');
+    }
+
+    @isTest
+    static void shouldHave100PercentageOfContactsOver18() {
+        Date current=Date.today();
+        Date over30years=Date.newInstance(current.year()-30,1,1);
+
+        Account account=[SELECT Id ,(SELECT Id FROM Contacts) FROM Account WHERE Name = 'Test Account-0002'];
+        List<Contact> Contacts=account.Contacts; 
 
         Test.startTest();
-            Database.SaveResult[] results=Database.insert(Contacts,false);
+            ATK.prepare(Contact.SObjectType, Contacts)
+                .field(Contact.Birthdate).repeat(over30years)
+                .save();
         Test.stopTest();
+
+        System.debug(contacts);
 
         account=[SELECT Id,Number_Of_Contacts_Over_18__c, Percentage_Of_Contacts_Over_18__c, 
         Oldest_Contact__c, Youngest_Contact__c,
         (SELECT Id, Birthdate FROM Contacts ORDER By Birthdate)
-        FROM Account where  Name = 'Test Account' Limit 1];
+        FROM Account WHERE Name = 'Test Account-0002'];
 
-        System.assertEquals(20, account.Contacts.size(),'it Should have 20 Contacts ');
-        System.assertEquals(20, account.Number_Of_Contacts_Over_18__c,'it Should have 20 Contacts over 18 ');
+        //System.assertEquals(50, account.Contacts.size(),'it Should have 50 Contacts ');
+        System.assertEquals(Contacts.size(), account.Number_Of_Contacts_Over_18__c,'it Should have '+Contacts.size()+' Contacts over 18 ');
         System.assertEquals(100, account.Percentage_Of_Contacts_Over_18__c,'it Should have 100% of percentage of contacts over 18 ');
         
-        System.assertEquals(24, account.Youngest_Contact__c,'the youngest contact Should have '+24+' years old');
-        System.assertEquals(30, account.Oldest_Contact__c,'the oldest contact Should have '+30+' years old');
-    }
-    @isTest
-    static void shouldHave50PertengaeOfContactsOver18() {
-        Account  account=new account(Name='Test Account');
-
-        insert account;
-
-        List<Contact> Contacts=TestDataFactory.GetContactsWithBirthDate(account.Id,10,24); 
-        Contacts.addAll(TestDataFactory.GetContactsWithBirthDate(account.Id,10,16));
-
-        System.debug('Contacts size: '+Contacts.size());
-
-        Test.startTest();
-            Database.SaveResult[] results=Database.insert(Contacts,false);
-        Test.stopTest();
-
-         account=[SELECT Id,Number_Of_Contacts_Over_18__c, Percentage_Of_Contacts_Over_18__c, 
-        Oldest_Contact__c, Youngest_Contact__c,
-        (SELECT Id, Birthdate FROM Contacts ORDER By Birthdate)
-        FROM Account where  Name = 'Test Account' Limit 1];
-
-        System.assertEquals(20, account.Contacts.size(),'it Should have 20 Contacts ');
-        System.assertEquals(10, account.Number_Of_Contacts_Over_18__c,'it Should have 10 Contacts over 18 ');
-        System.assertEquals(50, account.Percentage_Of_Contacts_Over_18__c,'it Should have 50% of percentage of contacts over 18 ');
+        System.assertEquals(30, account.Youngest_Contact__c,'the youngest contact Should have 30 years old');
+        System.assertEquals(30, account.Oldest_Contact__c,'the oldest contact Should have 30 years old');
         
-        System.assertEquals(16, account.Youngest_Contact__c,'the youngest contact Should have '+16);
-        System.assertEquals(24, account.Oldest_Contact__c,'the oldest contact Should have '+24);
     }
+    
 
     @isTest
-    static void shouldHave0PertengaeOfContactsOver18() {
-        Account  account=new account(Name='Test Account');
+    static void shouldDeleteAllContactsOver18() {
+        Account  account=[SELECT Id,
+                        (SELECT Id, Birthdate FROM Contacts) 
+                        FROM Account WHERE Name = 'Test Account-0004'];
 
-        insert account;
+        List<Contact> ContactsToDelete=new List<Contact>(); 
 
-        List<Contact> Contacts=TestDataFactory.GetContactsWithBirthDate(account.Id,20,0); 
+        for(Contact contact:account.Contacts){
+            Integer contantYears=contact.Birthdate.daysBetween(Date.today())/365;
+            if(contantYears>=18){
+                ContactsToDelete.add(Contact);
+            }
+        }
 
-        System.debug(Contacts);
+        System.debug(ContactsToDelete);
 
         Test.startTest();
-            Database.SaveResult[] results=Database.insert(Contacts,false);
+            delete ContactsToDelete;
         Test.stopTest();
 
-         account=[SELECT Id,Number_Of_Contacts_Over_18__c, Percentage_Of_Contacts_Over_18__c, 
+        account=[SELECT Id,Number_Of_Contacts_Over_18__c, Percentage_Of_Contacts_Over_18__c, 
         Oldest_Contact__c, Youngest_Contact__c,
-        (SELECT Id, Birthdate FROM Contacts ORDER By Birthdate)
-        FROM Account where  Name = 'Test Account' Limit 1];
+        (SELECT Id FROM Contacts) 
+        FROM Account WHERE Name = 'Test Account-0004'];
 
-        System.assertEquals(20, account.Contacts.size(),'it Should have 20 Contacts ');
+        System.assertEquals(25, account.Contacts.size(),'it Should have 20 Contacts ');
         System.assertEquals(0, account.Number_Of_Contacts_Over_18__c,'it Should have 0 Contacts over 18 ');
         System.assertEquals(0, account.Percentage_Of_Contacts_Over_18__c,'it Should have 0% of percentage of contacts over 18 ');
         
-        System.assertEquals(0, account.Youngest_Contact__c,'the youngest contact Should be 0 ');
-        System.assertEquals(0, account.Oldest_Contact__c,'the oldest contact Should be 0 ');
+        System.assertEquals(16, account.Youngest_Contact__c,'the youngest contact Should be 0 ');
+        System.assertEquals(16, account.Oldest_Contact__c,'the oldest contact Should be 0 ');
     }
 
     @isTest
     static void shouldDeleteAllContactsLess18() {
-        Account  account=new account(Name='Test Account');
-
-        insert account;
-        //We use the default user user created by Salesforce
-        List<Contact> Contacts=TestDataFactory.GetContactsWithBirthDate(account.Id,15,16); 
-        Contacts.addAll(TestDataFactory.GetContactsWithBirthDate(account.Id,5,24));
-
-        System.debug('Contacts size: '+Contacts.size());
+        Account  account=[SELECT Id, (SELECT Id, Birthdate FROM Contacts) 
+                        FROM Account WHERE Name = 'Test Account-0005'];
 
         List<Contact> ContactsToDelete=new List<Contact>(); 
 
-        insert Contacts;
-
-        for (Integer i=0 ; i<Contacts.size() ;i++) {
-
-            if((Contacts[i].Birthdate.daysBetween(Date.today())/365)<18)
-                ContactsToDelete.add(Contacts[i]);
-
+        for(Contact contact:account.Contacts){
+            Integer contantYears=contact.Birthdate.daysBetween(Date.today())/365;
+            if(contantYears<18){
+                ContactsToDelete.add(Contact);
+            }
         }
+
+        System.debug('Contacts size: '+account.Contacts.size());
         System.debug('Contacts to delete size: '+ContactsToDelete.size());
 
         Test.startTest();
@@ -155,15 +173,15 @@ private class ContactTriggerHandlerTest {
 
         account=[SELECT Id,Number_Of_Contacts_Over_18__c, Percentage_Of_Contacts_Over_18__c, 
         Oldest_Contact__c, Youngest_Contact__c,
-        (SELECT Id, Birthdate FROM Contacts ORDER By Birthdate)
-        FROM Account where  Name = 'Test Account' Limit 1];
+        (SELECT Id FROM Contacts ORDER By Birthdate)
+        FROM Account WHERE Name = 'Test Account-0005'];
 
-        System.assertEquals(5, account.Contacts.size(),'it Should have 5 Contacts ');
-        System.assertEquals(5, account.Number_Of_Contacts_Over_18__c,'it Should have 5 Contacts over 18 ');
+       // System.assertEquals((Contacts.size()/2), account.Contacts.size(),'it Should have 5 Contacts ');
+        System.assertEquals(25, account.Number_Of_Contacts_Over_18__c,'it Should have 25 Contacts over 18 ');
         System.assertEquals(100, account.Percentage_Of_Contacts_Over_18__c,'it Should have 100% of percentage of contacts over 18 ');
         
-        System.assertEquals(24, account.Youngest_Contact__c,'the youngest contact Should have '+24);
-        System.assertEquals(24, account.Oldest_Contact__c,'the oldest contact Should have '+24);
+        System.assertEquals(24, account.Youngest_Contact__c,'the youngest contact Should have 24');
+        System.assertEquals(24, account.Oldest_Contact__c,'the oldest contact Should have 24');
     }
 
 }
